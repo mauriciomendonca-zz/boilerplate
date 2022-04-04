@@ -1,0 +1,37 @@
+version: "3.7"
+
+services:
+    db:
+        container_name: upb-postgres
+        image: postgres:12
+        volumes:
+            - upb-db-data:/var/lib/postgresql/data/pgdata
+        environment:
+            PGDATA: /var/lib/postgresql/data/pgdata
+        ports:
+            - 5432:5432
+        env_file:
+            - .env
+        networks:
+            - upper-api-boilerplate
+
+    backend:
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        ports:
+            - "8000:8000"
+        env_file:
+            - .env
+        networks:
+            - upper-api-boilerplate
+        depends_on:
+            - db
+        command: sh -c './scripts/wait-for-db.sh && poetry run alembic upgrade head && poetry run uvicorn --host=0.0.0.0 app.main:app'
+
+volumes:
+    upb-db-data:
+
+networks:
+    upper-api-boilerplate:
+        driver: bridge
